@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { Workbook, Worksheet } from 'exceljs'
-import * as tmp from 'tmp';
+import * as tmp from 'tmp-promise';
 import { writeFile } from 'fs/promises'
+import { Observable, catchError, from, lastValueFrom, switchMap, throwError } from 'rxjs';
 
 
 @Injectable()
@@ -55,76 +56,98 @@ export class AppService {
         tpers_telefono: null
       }
     ];
-    
+
 
     data.forEach((docs: any) => {
       rows.push(Object.values(docs));
     });
 
-    
-    
+
+
     //creating a workbook
     let book = new Workbook();
 
     book.creator = 'daniel'
-    
+
     // creating a worksheet to workbook
-    let sheet = book.addWorksheet('sheet', { 
+    let sheet = book.addWorksheet('sheet', {
       pageSetup: { fitToPage: true, fitToHeight: 5, fitToWidth: 7, paperSize: undefined },
-      headerFooter:{ firstHeader: 'Hello World ExcelJS', firstFooter: 'Good Bye World ExcelJS' },
+      headerFooter: { firstHeader: 'Hello World ExcelJS', firstFooter: 'Good Bye World ExcelJS' },
 
     });
-    
+
     // add the header
     rows.unshift(Object.keys(data[0]));
-    
+
     sheet.addRows(rows);
 
     // add style to the table
     this.styleSheet(sheet);
-    
-    sheet.getColumn
 
-    let File = await new Promise((resolve, reject) => {
-      tmp.file({ 
+    // Original function:
+    // let filePromise = await new Promise((resolve, reject) => {
+    //   tmp.file({
+    //     discardDescriptor: true,
+    //     prefix: 'myExcelSheetTest',
+    //     postfix: '.xlsx',
+    //     mode: parseInt('0600', 8)
+    //   }, async (err, file) => {
+    //     if (err) {
+    //       throw new BadRequestException(err);
+    //     }
+
+    //     book.xlsx.writeFile(file).then(() => {
+    //       resolve(file)
+    //       console.log(file);
+
+    //     }).catch(error => {
+    //       throw new BadRequestException(error);
+    //     })
+    //   })
+    // });
+
+    // return filePromise;
+
+    // updated function-must install tmp-promise
+    try {
+      // Create a temporary file
+      const tmpFile = await tmp.file({
         discardDescriptor: true,
         prefix: 'myExcelSheetTest',
         postfix: '.xlsx',
         mode: parseInt('0600', 8)
-      }, async (err, file) => {
-        if(err) {
-          throw new BadRequestException(err);
-        }
-        
-        book.xlsx.writeFile(file).then( () => {
-          resolve(file)
-          console.log(file);
-          
-        }).catch( error => {
-          throw new BadRequestException(error);
-        })
-      })
-    })
+      });
 
-    // const tmpF = await tmp.file({ 
-    //       discardDescriptor: true,
-    //       prefix: 'myExcelSheet',
-    //       postfix: '.xlsx',
-    //       mode: parseInt('0600', 8)
-    //     })
+      // Write to the file using exceljs
+      await book.xlsx.writeFile(tmpFile.path);
 
-    //     console.log('TMP FILE:', tmpF);
-        
+      console.log(tmpFile.path);
 
-    // const File = await book.xlsx.writeFile(tmpF.path)
+      // Return the file path
+      return tmpFile.path;
+    } catch (error) {
+      throw new BadRequestException(error);
+    }
 
-    // console.log(File);
-    
-    
-    return File;
+    //function with rxjs
+    // const file$ = from(tmp.file({
+    //   discardDescriptor: true,
+    //   prefix: 'myExcelSheetTest',
+    //   postfix: '.xlsx',
+    //   mode: 0o600
+    // })).pipe(
+    //   switchMap(tmpFile => from(book.xlsx.writeFile(tmpFile.path)).pipe(
+    //     switchMap(() => from([tmpFile.path])),
+    //     catchError(error => throwError(() => new Error(error)))
+    //   )),
+    //   catchError(error => throwError(() => new Error(error)))
+    // )
+
+    // return await lastValueFrom(file$)
+
   }
 
-  private styleSheet(sheet:Worksheet) {
+  private styleSheet(sheet: Worksheet) {
 
     //set the width of each column
 
@@ -156,10 +179,10 @@ export class AppService {
     // sheet.getRow(10).height = 30.5
     // sheet.getRow(11).height = 30.5
     // sheet.getRow(12).height = 30.5
-    
+
     //font color
 
-    sheet.getRow(1).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
+    sheet.getRow(1).font = { size: 11.5, bold: true, color: { argb: 'FFFFFF' } }
     // sheet.getRow(2).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
     // sheet.getRow(3).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
     // sheet.getRow(4).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
@@ -171,10 +194,10 @@ export class AppService {
     // sheet.getRow(10).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
     // sheet.getRow(11).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
     // sheet.getRow(12).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-  
+
     //background color
 
-    sheet.getRow(1).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
+    sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', bgColor: { argb: '000000' }, fgColor: { argb: '000000' } }
     // sheet.getRow(2).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
     // sheet.getRow(3).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
     // sheet.getRow(4).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
@@ -217,6 +240,6 @@ export class AppService {
 
 
   }
-  
-  
+
+
 }
