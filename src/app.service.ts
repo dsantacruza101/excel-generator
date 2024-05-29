@@ -79,10 +79,10 @@ export class AppService {
     // add the header
     rows.unshift(Object.keys(data[0]));
 
-    sheet.addRows(rows);
+    // sheet.addRows(rows);
 
     // add style to the table
-    this.styleSheet(sheet);
+    this.styleSheet(sheet, rows);
 
     // Original function:
     // let filePromise = await new Promise((resolve, reject) => {
@@ -109,66 +109,74 @@ export class AppService {
     // return filePromise;
 
     // updated function-must install tmp-promise
-    try {
-      // Create a temporary file
-      const tmpFile = await tmp.file({
-        discardDescriptor: true,
-        prefix: 'myExcelSheetTest',
-        postfix: '.xlsx',
-        mode: parseInt('0600', 8)
-      });
+    // try {
+    //   // Create a temporary file
+    //   const tmpFile = await tmp.file({
+    //     discardDescriptor: true,
+    //     prefix: 'myExcelSheetTest',
+    //     postfix: '.xlsx',
+    //     mode: parseInt('0600', 8)
+    //   });
 
-      // Write to the file using exceljs
-      await book.xlsx.writeFile(tmpFile.path);
+    //   // Write to the file using exceljs
+    //   await book.xlsx.writeFile(tmpFile.path);
 
-      console.log(tmpFile.path);
+    //   console.log(tmpFile.path);
 
-      // Return the file path
-      return tmpFile.path;
-    } catch (error) {
-      throw new BadRequestException(error);
-    }
+    //   // Return the file path
+    //   return tmpFile.path;
+    // } catch (error) {
+    //   throw new BadRequestException(error);
+    // }
 
     //function with rxjs
-    // const file$ = from(tmp.file({
-    //   discardDescriptor: true,
-    //   prefix: 'myExcelSheetTest',
-    //   postfix: '.xlsx',
-    //   mode: 0o600
-    // })).pipe(
-    //   switchMap(tmpFile => from(book.xlsx.writeFile(tmpFile.path)).pipe(
-    //     switchMap(() => from([tmpFile.path])),
-    //     catchError(error => throwError(() => new Error(error)))
-    //   )),
-    //   catchError(error => throwError(() => new Error(error)))
-    // )
+    const file$ = from(tmp.file({
+      discardDescriptor: true,
+      prefix: 'myExcelSheetTest',
+      postfix: '.xlsx',
+      mode: 0o600
+    })).pipe(
+      switchMap(tmpFile => from(book.xlsx.writeFile(tmpFile.path)).pipe(
+        switchMap(() => from([tmpFile.path])),
+        catchError(error => throwError(() => new Error(error)))
+      )),
+      catchError(error => throwError(() => new Error(error)))
+    )
 
-    // return await lastValueFrom(file$)
+    return await lastValueFrom(file$)
 
   }
 
-  private styleSheet(sheet: Worksheet) {
+  private styleSheet(sheet: Worksheet, dataRows: any) {
+
+    sheet.mergeCells('A1:Q1');
+
+    const titleCell = sheet.getCell('A1')
+    titleCell.value = 'Unidad de Servicios Generales'
+    titleCell.style.font = { bold: true, size: 10}
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+
 
     //set the width of each column
 
-    sheet.getColumn(1).width = 20.5
-    sheet.getColumn(2).width = 20.5
-    sheet.getColumn(3).width = 20.5
-    sheet.getColumn(4).width = 20.5
-    sheet.getColumn(5).width = 20.5
-    sheet.getColumn(6).width = 20.5
-    sheet.getColumn(7).width = 20.5
-    sheet.getColumn(8).width = 20.5
-    sheet.getColumn(9).width = 20.5
-    sheet.getColumn(10).width = 20.5
-    sheet.getColumn(11).width = 20.5
-    sheet.getColumn(12).width = 20.5
+    // sheet.getColumn(1).width = 20.5
+    // sheet.getColumn(2).width = 20.5
+    // sheet.getColumn(3).width = 20.5
+    // sheet.getColumn(4).width = 20.5
+    // sheet.getColumn(5).width = 20.5
+    // sheet.getColumn(6).width = 20.5
+    // sheet.getColumn(7).width = 20.5
+    // sheet.getColumn(8).width = 20.5
+    // sheet.getColumn(9).width = 20.5
+    // sheet.getColumn(10).width = 20.5
+    // sheet.getColumn(11).width = 20.5
+    // sheet.getColumn(12).width = 20.5
 
     //set the height of header
 
     //font color
-    sheet.getRow(1).height = 30.5
-    sheet.getRow(2).height = 40.5
+    // sheet.getRow(1).height = 30.5
+    // sheet.getRow(2).height = 40.5
     // sheet.getRow(3).height = 30.5
     // sheet.getRow(4).height = 30.5
     // sheet.getRow(5).height = 30.5
@@ -182,7 +190,7 @@ export class AppService {
 
     //font color
 
-    sheet.getRow(1).font = { size: 11.5, bold: true, color: { argb: 'FFFFFF' } }
+    // sheet.getRow(1).font = { size: 11.5, bold: true, color: { argb: 'FFFFFF' } }
     // sheet.getRow(2).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
     // sheet.getRow(3).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
     // sheet.getRow(4).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
@@ -197,7 +205,7 @@ export class AppService {
 
     //background color
 
-    sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', bgColor: { argb: '000000' }, fgColor: { argb: '000000' } }
+    // sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', bgColor: { argb: '000000' }, fgColor: { argb: '000000' } }
     // sheet.getRow(2).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
     // sheet.getRow(3).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
     // sheet.getRow(4).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
@@ -211,8 +219,8 @@ export class AppService {
     // sheet.getRow(12).fill  = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
 
     //alignments
-    sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    sheet.getRow(2).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+    // sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+    // sheet.getRow(2).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
     // sheet.getRow(3).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
     // sheet.getRow(4).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
     // sheet.getRow(5).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
@@ -225,7 +233,7 @@ export class AppService {
     // sheet.getRow(12).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
 
     //borders
-    sheet.getRow(1).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
+    // sheet.getRow(1).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
     // sheet.getRow(2).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
     // sheet.getRow(3).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
     // sheet.getRow(4).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }

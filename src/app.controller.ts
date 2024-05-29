@@ -2,7 +2,7 @@ import { Controller, Get, Header, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Response } from 'express';
 
-@Controller()
+@Controller('excel')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
