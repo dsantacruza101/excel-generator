@@ -3,7 +3,8 @@ import { Workbook, Worksheet } from 'exceljs'
 import * as tmp from 'tmp-promise';
 import { writeFile } from 'fs/promises'
 import { Observable, catchError, from, lastValueFrom, switchMap, throwError } from 'rxjs';
-
+import { HeaderTittles } from './common/consolidado-af-goes.structure';
+import { data } from './database/data';
 
 @Injectable()
 export class AppService {
@@ -12,57 +13,23 @@ export class AppService {
 
     let rows = []
 
-    let data = [
-      {
-        tsoli_id: 2389268,
-        trepr_nombre: 'Consulado General de El Salvador en Doral, Florida, Estados Unidos',
-        tsoli_fechahoracreacion: '2023-10-24T20:58:53.000Z',
-        nombre: 'NEHEMIAS ABDIEL DE LEON MIRANDA',
-        tsoli_concepto: null,
-        cpais_nombre: 'United States of America',
-        cserv_nombre: 'DUI por primera vez',
-        cserv_precio: '35.00',
-        tsoli_cantidaddocs: 1,
-        catlin_nombre: 'EMISION DE DUI',
-        treci_recibo: '10215',
-        tpers_telefono: null
-      },
-      {
-        tsoli_id: 2389269,
-        trepr_nombre: 'Consulado General de El Salvador en Los Angeles, California, Estados Unidos',
-        tsoli_fechahoracreacion: '2023-10-25T20:58:53.000Z',
-        nombre: 'JOSE MANUEL RODRIGUEZ LOPEZ',
-        tsoli_concepto: null,
-        cpais_nombre: 'United States of America',
-        cserv_nombre: 'DUI por primera vez',
-        cserv_precio: '35.00',
-        tsoli_cantidaddocs: 1,
-        catlin_nombre: 'EMISION DE DUI',
-        treci_recibo: '10216',
-        tpers_telefono: null
-      },
-      {
-        tsoli_id: 2389270,
-        trepr_nombre: 'Consulado General de El Salvador en Houston, Texas, Estados Unidos',
-        tsoli_fechahoracreacion: '2023-10-26T20:58:53.000Z',
-        nombre: 'MARIA ISABEL GONZALEZ RAMIREZ',
-        tsoli_concepto: null,
-        cpais_nombre: 'United States of America',
-        cserv_nombre: 'DUI por primera vez',
-        cserv_precio: '35.00',
-        tsoli_cantidaddocs: 1,
-        catlin_nombre: 'EMISION DE DUI',
-        treci_recibo: '10217',
-        tpers_telefono: null
-      }
-    ];
-
-
-    data.forEach((docs: any) => {
-      rows.push(Object.values(docs));
+    data.forEach((_data: any, index: number) => {
+      rows.push([index + 1,
+      _data.codigo,
+      _data.nombre,
+      _data.cantidad,
+      _data.valor,
+      _data.cargos.cantidad,
+      _data.cargos.valor,
+      _data.descargos.cantidad,
+      _data.descargos.valor,
+      _data.decrimento.cantidad,
+      _data.decrimento.valor,
+      _data.suma_por_ajuste.cantidad,
+      _data.suma_por_ajuste.valor,
+      _data.resta_por_ajuste.cantidad,
+      _data.resta_por_ajuste.valor]);
     });
-
-
 
     //creating a workbook
     let book = new Workbook();
@@ -77,12 +44,25 @@ export class AppService {
     });
 
     // add the header
-    rows.unshift(Object.keys(data[0]));
-
-    // sheet.addRows(rows);
+    // rows.unshift(Object.keys(data[0]));
+    console.log(rows);
 
     // add style to the table
-    this.styleSheet(sheet, rows);
+    this.style_AF_Sheet(sheet, rows);
+
+    // const matrixSheet = book.addWorksheet('Matrix');
+
+    // const matrix = [
+    //   [1, 2, 3],
+    //   [4, 5, 6],
+    //   [7, 8, 9]
+    // ];
+
+    // for ( let i = 0; i < matrix.length; i++ ) {
+    //   for(let j = 0; j < matrix[i].length; j++){
+    //     matrixSheet.getCell(i + 1, j + 1).value = matrix[i][j];
+    //   }
+    // }
 
     // Original function:
     // let filePromise = await new Promise((resolve, reject) => {
@@ -147,107 +127,64 @@ export class AppService {
 
   }
 
-  private styleSheet(sheet: Worksheet, dataRows: any) {
+  public style_AF_Sheet(sheet: Worksheet, dataRows?: any) {
 
-    sheet.mergeCells('A1:Q1');
+    const tittleCells = ['A1:Q1', 'A2:Q2', 'A4:Q4', 'A6:E6'];
 
-    const titleCell = sheet.getCell('A1')
-    titleCell.value = 'Unidad de Servicios Generales'
-    titleCell.style.font = { bold: true, size: 10}
-    titleCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+    tittleCells.forEach(range => {
+      sheet.mergeCells(range)
+    });
 
+    const tittleValues = HeaderTittles.TITTLE_CONSOLIDADO_AF_GOES;
 
-    //set the width of each column
+    tittleValues.forEach(({ cell, value, fontSize }) => {
+      this.setTittleCells(sheet, cell, value, fontSize)
+    });
 
-    // sheet.getColumn(1).width = 20.5
-    // sheet.getColumn(2).width = 20.5
-    // sheet.getColumn(3).width = 20.5
-    // sheet.getColumn(4).width = 20.5
-    // sheet.getColumn(5).width = 20.5
-    // sheet.getColumn(6).width = 20.5
-    // sheet.getColumn(7).width = 20.5
-    // sheet.getColumn(8).width = 20.5
-    // sheet.getColumn(9).width = 20.5
-    // sheet.getColumn(10).width = 20.5
-    // sheet.getColumn(11).width = 20.5
-    // sheet.getColumn(12).width = 20.5
+    const consAfGoes = HeaderTittles.HEADER_ROW_CONSOLIDADO_AF_GOES;
 
-    //set the height of header
+    consAfGoes.forEach(({ range, value }) => {
+      this.formatCellsForheaderTable(sheet, range, value)
+    })
 
-    //font color
-    // sheet.getRow(1).height = 30.5
-    // sheet.getRow(2).height = 40.5
-    // sheet.getRow(3).height = 30.5
-    // sheet.getRow(4).height = 30.5
-    // sheet.getRow(5).height = 30.5
-    // sheet.getRow(6).height = 30.5
-    // sheet.getRow(7).height = 30.5
-    // sheet.getRow(8).height = 30.5
-    // sheet.getRow(9).height = 30.5
-    // sheet.getRow(10).height = 30.5
-    // sheet.getRow(11).height = 30.5
-    // sheet.getRow(12).height = 30.5
-
-    //font color
-
-    // sheet.getRow(1).font = { size: 11.5, bold: true, color: { argb: 'FFFFFF' } }
-    // sheet.getRow(2).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(3).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(4).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(5).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(6).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(7).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(8).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(9).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(10).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(11).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-    // sheet.getRow(12).font = {size: 11.5, bold: true, color: {argb: 'FFFFFF'} }
-
-    //background color
-
-    // sheet.getRow(1).fill = { type: 'pattern', pattern: 'solid', bgColor: { argb: '000000' }, fgColor: { argb: '000000' } }
-    // sheet.getRow(2).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(3).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(4).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(5).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(6).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(7).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(8).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(9).fill = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(10).fill  = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(11).fill  = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-    // sheet.getRow(12).fill  = {type: 'pattern', pattern: 'solid', bgColor: {argb: '000000'}, fgColor: { argb: '000000' } }
-
-    //alignments
-    // sheet.getRow(1).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(2).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(3).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(4).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(5).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(6).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(7).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(8).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(9).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(10).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(11).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    // sheet.getRow(12).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-
-    //borders
-    // sheet.getRow(1).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(2).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(3).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(4).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(5).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(6).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(7).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(8).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(9).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(10).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(11).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-    // sheet.getRow(12).border = { top: { style: 'thin', color: { argb: '000000' } }, left: { style: 'thin', color: { argb: 'FFFFFF' } }, bottom: { style: 'thin', color: { argb: '000000' } }, right: { style: 'thin', color: { argb: 'FFFFFF' } } }
-
+    
+    this.setBorders(sheet, 7, 1, 9, 15);
+    
+    sheet.addRows(dataRows);
 
   }
 
+  public setTittleCells = (sheet: Worksheet, cell: string, value: string, fontSize: number) => {
+    const titleCell = sheet.getCell(cell);
+    titleCell.value = value;
+    titleCell.style.font = { bold: true, size: fontSize };
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+  }
+
+  public formatCellsForheaderTable = (sheet: Worksheet, cellRange: string, value: string) => {
+
+    sheet.mergeCells(cellRange);
+    const cell = sheet.getCell(cellRange.split(':')[0]);
+    cell.value = value;
+    cell.style.font = { size: 9 };
+    cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+
+  }
+
+  public setBorders = (sheet, startRow: number, startCol: number, endRow: number, endCol: number) => {
+    const borderStyle = { style: 'thin' };
+
+    for (let i = startRow; i <= endRow; i++) {
+      for (let j = startCol; j <= endCol; j++) {
+        const cell = sheet.getCell(i, j);
+        cell.border = {
+          top: borderStyle,
+          left: borderStyle,
+          bottom: borderStyle,
+          right: borderStyle
+        };
+      }
+    }
+  }
 
 }
